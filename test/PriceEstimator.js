@@ -70,26 +70,26 @@ contract('PriceEstimator', function (accounts) {
         it("should estimate price for less than 6000 liters", async function () {
             let result = await PriceEstimatorContract.estimate(_householdMeter, _liters1);
             let expectedResult = (_liters1 / 1000) * _price1;
-            assert(result.eq(expectedResult), "The price was not correct");
+            assert(result[0].eq(expectedResult), "The price was not correct");
         });
 
         it("should estimate price for less than 10500 liters", async function () {
             let result = await PriceEstimatorContract.estimate(_householdMeter, _liters2);
             let expectedResult = (_liters2 / 1000) * _price2;
-            assert(result.eq(expectedResult), "The price was not correct");
+            assert(result[0].eq(expectedResult), "The price was not correct");
 
         });
 
         it("should estimate price for less than 30000 liters", async function () {
             let result = await PriceEstimatorContract.estimate(_householdMeter, _liters3);
             let expectedResult = (_liters3 / 1000) * _price3;
-            assert(result.eq(expectedResult), "The price was not correct");
+            assert(result[0].eq(expectedResult), "The price was not correct");
         });
 
         it("should estimate price for more than 50000 liters", async function () {
             let result = await PriceEstimatorContract.estimate(_householdMeter, _liters4);
             let expectedResult = (_liters4 / 1000) * _price4;
-            assert(result.eq(expectedResult), "The price was not correct");
+            assert(result[0].eq(expectedResult), "The price was not correct");
         });
 
         it("should estimate price for second voucher in same month", async function () {
@@ -99,7 +99,7 @@ contract('PriceEstimator', function (accounts) {
 
             let result = await PriceEstimatorContract.estimate(_householdMeter, _liters1);
             let expectedResult = (_liters1 / 1000) * _price2;
-            assert(result.eq(expectedResult), "The price was not correct");
+            assert(result[0].eq(expectedResult), "The price was not correct");
         });
 
         // TODO Write more tests

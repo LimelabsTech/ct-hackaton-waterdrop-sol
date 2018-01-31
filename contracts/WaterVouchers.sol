@@ -70,9 +70,10 @@ contract WaterVouchers is Ownable {
         return true;
     }
 
-    function estimatePrice(address _meter, uint _liters) public view returns(uint256 price) {    
+    function estimatePrice(address _meter, uint _liters) public view returns(uint256 amount) {    
         PriceEstimator priceEstimatorContract = PriceEstimator(priceEstimatorContractAddress);
-        return priceEstimatorContract.estimate(_meter, _liters);
+        var (amountResult, ) = priceEstimatorContract.estimate(_meter, _liters);
+        return uint256(amountResult);
     }
 
     function getLastVoucherLitersInMonth(address _meter, uint256 _timestampEnd) public constant returns(uint256 liters) {
