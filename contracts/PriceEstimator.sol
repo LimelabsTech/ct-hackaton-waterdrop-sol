@@ -15,11 +15,8 @@ contract PriceEstimator {
         waterVouchersContract = WaterVouchers(_waterVoucherAddress);
     }
 
-    function getCurrentMonthLiters(address _meter, uint256 _toTimestamp) public view returns(uint256 liters) {
-
-        // this.getCurrentMonthLiters(_meter, _fromTimestamp);
-        // TODO Find all liters for past 30 days
-        return waterVouchersContract.getLastVoucherLiters(_meter);
+    function getCurrentMonthLiters(address _meter) public view returns(uint256 liters) {
+        return waterVouchersContract.getLastVoucherLitersInMonth(_meter, now - 4 weeks);
     }
 
     function estimate(address _meter, uint _liters) public view returns(uint256 price) {        
@@ -28,22 +25,21 @@ contract PriceEstimator {
         require(_liters % 1000 == 0);
 
         uint256 householdSize = householdMetersContract.getHouseholdMembersCount(_meter);
-        // TODO Sum up all liters used in the past 4 weeks
-        // _liters += this.getCurrentMonthLiters(_meter, now - 4 weeks);
+        uint litersMonth = _liters + this.getCurrentMonthLiters(_meter);
 
-        if (_liters <= householdSize.mul(1500)) {
+        if (litersMonth <= householdSize.mul(1500)) {
             return _liters.div(1000).mul(456); // R4.56
         }
-        if (_liters <= householdSize.mul(2625)) {
+        if (litersMonth <= householdSize.mul(2625)) {
             return _liters.div(1000).mul(1775); // R17.75
         }
-        if (_liters <= householdSize.mul(5000)) {
+        if (litersMonth <= householdSize.mul(5000)) {
             return _liters.div(1000).mul(2493); // R24.93
         }
-        if (_liters <= householdSize.mul(8750)) {
+        if (litersMonth <= householdSize.mul(8750)) {
             return _liters.div(1000).mul(4153); // R41.53
         }
-        if (_liters <= householdSize.mul(12500)) {
+        if (litersMonth <= householdSize.mul(12500)) {
             return _liters.div(1000).mul(7029); // R70.29
         } else {
             return _liters.div(1000).mul(23859); // R238.59

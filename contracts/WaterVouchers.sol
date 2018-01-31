@@ -30,7 +30,7 @@ contract WaterVouchers is Ownable {
 
     event LogAddIntermediary(address _newIntermediary);
     event LogRemoveIntermediary(address _intermediaryToRemove);
-    event LogSubmitVoucher(address _issuer, address _meter, bytes32 _voucherId, uint256 _liters);
+    event LogPurchaseVoucher(address _issuer, address _meter, bytes32 _voucherId, uint256 _liters);
 
     modifier onlyIntermediary() {
         require(intermediaries[msg.sender].isActive);
@@ -57,20 +57,35 @@ contract WaterVouchers is Ownable {
         _;
     }
 
-    function WaterVouchers(address _priceEstimatorContractAddress) public {
-        priceEstimatorContractAddress = _priceEstimatorContractAddress;
+    function WaterVouchers() public {
     }
 
-    // TODO 
-    function getLastVoucherLiters(address _meter) public constant returns(uint256 liters) {
-        // bytes32[] voucherIds = meterVouchers[_meter];
-        // bytes32 voucherId = voucherIds[0];
-        return 100; //vouchers[voucherId].liters;
+    function setPriceEstimatorContractAddress(address _priceEstimatorContractAddress) public onlyOwner returns(bool success) {
+        priceEstimatorContractAddress = _priceEstimatorContractAddress;
+        return true;
     }
 
     function setWaterGoverningContractAddress(address _waterGoverningContractAddress) public onlyOwner returns(bool success) {
         waterGoverningContractAddress = _waterGoverningContractAddress;
         return true;
+    }
+
+    function getLastVoucherLitersInMonth(address _meter, uint256 _timestampEnd) public constant returns(uint256 liters) {
+        uint256 resultLiters;
+        bytes32[] storage voucherIdsLoc = meterVouchers[_meter];
+        
+        if (voucherIdsLoc.length == 0) {
+            return 0;
+        }
+
+        for (uint256 index = voucherIdsLoc.length - 1; vouchers[voucherIdsLoc[index]].timestamp > _timestampEnd; index--) {
+            resultLiters += vouchers[voucherIdsLoc[index]].liters;
+            if (index == 0) {
+                return resultLiters;
+            }
+        }
+
+        return resultLiters;
     }
 
     function addIntermediary(address _newIntermediary) 
@@ -105,7 +120,7 @@ contract WaterVouchers is Ownable {
         return true;
     }
 
-    function submitVoucher(bytes32 _voucherId, address _meter, uint256 _liters) 
+    function purchaseVoucher(bytes32 _voucherId, address _meter, uint256 _liters) 
         public onlyIntermediary onlyNotExistingVoucher(_voucherId) returns(bool success) 
     {
         require(_voucherId.length != 0);
@@ -113,24 +128,25 @@ contract WaterVouchers is Ownable {
         require(_liters > 0);
 
         PriceEstimator priceEstimatorContract = PriceEstimator(priceEstimatorContractAddress);
+        uint256 currentPrice = priceEstimatorContract.estimate(_meter, _liters);
 
         vouchers[_voucherId] = Voucher({
             issuer: msg.sender,
             liters: _liters,
             meter: _meter,
-            totalPrice: priceEstimatorContract.estimate(_meter, _liters),
+            totalPrice: currentPrice,
             timestamp: now,
             voucherIdsArrayIndex: voucherIds.length,
             isActive: true
         });
-        
+
         voucherIds.push(_voucherId);
         meterVouchers[_meter].push(_voucherId);
 
         WaterGoverning waterGoverning = WaterGoverning(waterGoverningContractAddress);
         waterGoverning.addLiters(_meter, _liters);
         
-        LogSubmitVoucher(msg.sender, _meter, _voucherId, _liters);
+        LogPurchaseVoucher(msg.sender, _meter, _voucherId, _liters);
 
         return true;
     }
