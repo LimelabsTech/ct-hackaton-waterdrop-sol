@@ -1,5 +1,5 @@
 var HouseholdMeters = artifacts.require("./HouseholdMeters.sol");
-let PriceEstimator = artifacts.require("./PriceEstimator.sol");
+let PriceEstimator = artifacts.require("./PriceEstimator/PriceEstimator.sol");
 
 module.exports = async function (deployer) {
     await deployer.deploy(HouseholdMeters);

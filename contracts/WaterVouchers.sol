@@ -2,7 +2,9 @@ pragma solidity ^0.4.18;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./WaterGoverning.sol";
-import "./PriceEstimator.sol";
+import "./PriceEstimator/PriceEstimator.sol";
+
+// TODO Write TESTS
 
 contract WaterVouchers is Ownable {
     address public waterGoverningContractAddress;
@@ -70,10 +72,12 @@ contract WaterVouchers is Ownable {
         return true;
     }
 
-    function estimatePrice(address _meter, uint _liters) public view returns(uint256 amount) {    
+    function estimatePrice(address _meter, uint _liters) public view returns(uint256 amount, uint256 price) {    
         PriceEstimator priceEstimatorContract = PriceEstimator(priceEstimatorContractAddress);
-        var (amountResult, ) = priceEstimatorContract.estimate(_meter, _liters);
-        return uint256(amountResult);
+        uint256 amountResult;
+        uint256 priceResult; 
+        (amountResult, priceResult) = priceEstimatorContract.estimate(_meter, _liters);
+        return (amountResult, priceResult);
     }
 
     function getLastVoucherLitersInMonth(address _meter, uint256 _timestampEnd) public constant returns(uint256 liters) {
@@ -133,13 +137,13 @@ contract WaterVouchers is Ownable {
         require(_meter != address(0));
         require(_liters > 0);
 
-        uint256 currentPrice = this.estimatePrice(_meter, _liters);
+        var (currentPrice, ) = this.estimatePrice(_meter, _liters);
 
         vouchers[_voucherId] = Voucher({
             issuer: msg.sender,
             liters: _liters,
             meter: _meter,
-            totalPrice: currentPrice,
+            totalPrice: uint256(currentPrice),
             timestamp: now,
             voucherIdsArrayIndex: voucherIds.length,
             isActive: true

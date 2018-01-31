@@ -1,5 +1,5 @@
 const HouseholdMeters = artifacts.require("./HouseholdMeters.sol");
-const PriceEstimator = artifacts.require("./PriceEstimator.sol");
+const PriceEstimator = artifacts.require("./PriceEstimator/PriceEstimator.sol");
 const WaterVoucher = artifacts.require("./WaterVouchers.sol");
 const WaterGoverning = artifacts.require("./WaterGoverning.sol");
 const util = require('./util');

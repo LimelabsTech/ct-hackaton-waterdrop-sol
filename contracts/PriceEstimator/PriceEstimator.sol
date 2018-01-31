@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
-import "./HouseholdMeters.sol";
-import "./WaterVouchers.sol";
+import "./../HouseholdMeters.sol";
+import "./../WaterVouchers.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract PriceEstimator {

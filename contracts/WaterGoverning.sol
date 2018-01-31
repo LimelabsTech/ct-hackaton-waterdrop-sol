@@ -1,5 +1,6 @@
 pragma solidity ^0.4.18;
 
+// TODO Write TESTS
 contract WaterGoverning {
     address public voucherContractAddress;
     mapping(address => uint) public meterLiters;
