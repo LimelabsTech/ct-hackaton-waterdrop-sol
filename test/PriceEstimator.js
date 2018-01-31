@@ -1,5 +1,8 @@
 const HouseholdMeters = artifacts.require("./HouseholdMeters.sol");
 const PriceEstimator = artifacts.require("./PriceEstimator/PriceEstimator.sol");
+const IPriceEstimator = artifacts.require("./PriceEstimator/IPriceEstimator.sol");
+const PriceEstimatorProxy = artifacts.require("./PriceEstimator/PriceEstimatorProxy.sol");
+const IOwnableUpgradeableImplementation = artifacts.require("./Upgradeability/OwnableUpgradeableImplementation/IOwnableUpgradeableImplementation.sol");
 const WaterVoucher = artifacts.require("./WaterVouchers.sol");
 const WaterGoverning = artifacts.require("./WaterGoverning.sol");
 const util = require('./util');
@@ -35,8 +38,119 @@ contract('PriceEstimator', function (accounts) {
     let HouseholdMetersContract;
     let PriceEstimatorContract;
     let WaterVoucherContract;
+    let PriceEstimatorContractImpl;
+    let PriceEstimatorContractProxy;
 
     var wait = ms => new Promise((r, j) => setTimeout(r, ms))
+
+    describe("Creating PriceEstimator contract", () => {
+        beforeEach(async function () {
+            HouseholdMetersContract = await HouseholdMeters.new({
+                from: _owner
+            });
+
+            WaterVoucherContract = await WaterVoucher.new({
+                from: _owner
+            });
+
+            WaterGoverningContract = await WaterGoverning.new(WaterVoucherContract.address, {
+                from: _owner
+            });
+
+            let PriceEstimatorContractImpl = await PriceEstimator.new({
+                from: _owner
+            });
+
+            let PriceEstimatorContractProxy = await PriceEstimator.new(PriceEstimatorContractImpl.address, {
+                from: _owner
+            });
+
+            PriceEstimatorContract = await IPriceEstimator.at(PriceEstimatorContractProxy.address);
+
+            await PriceEstimatorContract.init({
+                from: _owner
+            });
+            await PriceEstimatorContract.setHouseholdMetersContract(HouseholdMetersContract.address);
+            await PriceEstimatorContract.setWaterVouchersContract(WaterVoucherContract.address);
+
+            await WaterVoucherContract.setPriceEstimatorContractAddress(PriceEstimatorContract.address);
+            await WaterVoucherContract.setWaterGoverningContractAddress(WaterGoverningContract.address);
+
+            await HouseholdMetersContract.addAdmin(_admin1);
+            await HouseholdMetersContract.addHouseholdMeter(_householdMeter, _householdMembers, {
+                from: _admin1
+            });
+
+            await WaterVoucherContract.addIntermediary(_admin1);
+        });
+
+        it("should get the owner of the first contract", async function () {
+            const owner = await PriceEstimatorContract.getOwner();
+            assert.strictEqual(owner, _owner, "The owner is not set correctly");
+        });
+    });
+
+    describe("Upgrade PriceEstimator contract", () => {
+        beforeEach(async function () {
+            HouseholdMetersContract = await HouseholdMeters.new({
+                from: _owner
+            });
+
+            WaterVoucherContract = await WaterVoucher.new({
+                from: _owner
+            });
+
+            WaterGoverningContract = await WaterGoverning.new(WaterVoucherContract.address, {
+                from: _owner
+            });
+
+            PriceEstimatorContractImpl = await PriceEstimator.new({
+                from: _owner
+            });
+
+            PriceEstimatorContractProxy = await PriceEstimator.new(PriceEstimatorContractImpl.address, {
+                from: _owner
+            });
+
+            PriceEstimatorContract = await IPriceEstimator.at(PriceEstimatorContractProxy.address);
+
+            await PriceEstimatorContract.init({
+                from: _owner
+            });
+            await PriceEstimatorContract.setHouseholdMetersContract(HouseholdMetersContract.address);
+            await PriceEstimatorContract.setWaterVouchersContract(WaterVoucherContract.address);
+
+            await WaterVoucherContract.setPriceEstimatorContractAddress(PriceEstimatorContract.address);
+            await WaterVoucherContract.setWaterGoverningContractAddress(WaterGoverningContract.address);
+
+            await HouseholdMetersContract.addAdmin(_admin1);
+            await HouseholdMetersContract.addHouseholdMeter(_householdMeter, _householdMembers, {
+                from: _admin1
+            });
+
+            await WaterVoucherContract.addIntermediary(_admin1);
+        });
+
+        it("should upgrade contract from owner", async function () {
+            let PriceEstimatorContractImpl2 = await PriceEstimator.new({
+                from: _owner
+            });
+            const upgradeableContract = await IOwnableUpgradeableImplementation.at(PriceEstimatorContractProxy.address);
+            await upgradeableContract.upgradeImplementation(PriceEstimatorContractImpl2.address);
+            const newImplAddress = await upgradeableContract.getImplementation();
+            assert.strictEqual(PriceEstimatorContractImpl2.address, newImplAddress, "The address is not set correctly");
+        });
+
+        it("should throw on upgrade contract from not owner", async function () {
+            let PriceEstimatorContractImpl2 = await PriceEstimator.new({
+                from: _owner
+            });
+            const upgradeableContract = await IOwnableUpgradeableImplementation.at(PriceEstimatorContractProxy.address);
+            await expectThrow(upgradeableContract.upgradeImplementation(PriceEstimatorContractImpl2.address, {
+                from: _notOwner
+            }));
+        });
+    });
 
     describe("Estimate correct prices", () => {
         beforeEach(async function () {
@@ -52,12 +166,24 @@ contract('PriceEstimator', function (accounts) {
                 from: _owner
             });
 
-            PriceEstimatorContract = await PriceEstimator.new(HouseholdMetersContract.address, WaterVoucherContract.address, {
+            let PriceEstimatorContractImpl = await PriceEstimator.new({
                 from: _owner
             });
 
-            WaterVoucherContract.setPriceEstimatorContractAddress(PriceEstimatorContract.address);
-            WaterVoucherContract.setWaterGoverningContractAddress(WaterGoverningContract.address);
+            let PriceEstimatorContractProxy = await PriceEstimator.new(PriceEstimatorContractImpl.address, {
+                from: _owner
+            });
+
+            PriceEstimatorContract = await IPriceEstimator.at(PriceEstimatorContractProxy.address);
+
+            await PriceEstimatorContract.init({
+                from: _owner
+            });
+            await PriceEstimatorContract.setHouseholdMetersContract(HouseholdMetersContract.address);
+            await PriceEstimatorContract.setWaterVouchersContract(WaterVoucherContract.address);
+
+            await WaterVoucherContract.setPriceEstimatorContractAddress(PriceEstimatorContract.address);
+            await WaterVoucherContract.setWaterGoverningContractAddress(WaterGoverningContract.address);
 
             await HouseholdMetersContract.addAdmin(_admin1);
             await HouseholdMetersContract.addHouseholdMeter(_householdMeter, _householdMembers, {
@@ -106,4 +232,9 @@ contract('PriceEstimator', function (accounts) {
         // require(_meter != address(0));
         // require(_liters > 1000);
     });
+
+    // TODO Write more test for
+    // function setHouseholdMetersContract
+    // function setWaterVouchersContract
+    // function getCurrentMonthLiters
 });

@@ -2,17 +2,23 @@ pragma solidity ^0.4.18;
 
 import "./../HouseholdMeters.sol";
 import "./../WaterVouchers.sol";
+import "./../Upgradeability/OwnableUpgradeableImplementation/OwnableUpgradeableImplementation.sol";
+import "./IPriceEstimator.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract PriceEstimator {
+contract PriceEstimator is IPriceEstimator, OwnableUpgradeableImplementation {
     using SafeMath for uint256;
-// TODO Make it upgradeble
     HouseholdMeters householdMetersContract;
     WaterVouchers waterVouchersContract;
 
-    function PriceEstimator (address _householdMetersAddress, address _waterVoucherAddress) public {
+    function setHouseholdMetersContract(address _householdMetersAddress) public onlyOwner returns(bool success) {
         householdMetersContract = HouseholdMeters(_householdMetersAddress);
+        return true;
+    }
+
+    function setWaterVouchersContract(address _waterVoucherAddress) public onlyOwner returns(bool success) {
         waterVouchersContract = WaterVouchers(_waterVoucherAddress);
+        return true;
     }
 
     function getCurrentMonthLiters(address _meter) public view returns(uint256 liters) {
