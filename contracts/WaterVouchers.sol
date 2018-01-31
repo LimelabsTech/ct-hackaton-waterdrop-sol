@@ -4,8 +4,6 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./WaterGoverning.sol";
 import "./PriceEstimator/PriceEstimator.sol";
 
-// TODO Write TESTS
-
 contract WaterVouchers is Ownable {
     address public waterGoverningContractAddress;
     address public priceEstimatorContractAddress;
@@ -80,7 +78,7 @@ contract WaterVouchers is Ownable {
         return (amountResult, priceResult);
     }
 
-    function getLastVoucherLitersInMonth(address _meter, uint256 _timestampEnd) public constant returns(uint256 liters) {
+    function getLastVoucherLitersInMonth(address _meter, uint256 _timestampEnd) public view returns(uint256 liters) {
         uint256 resultLiters;
         bytes32[] storage voucherIdsLoc = meterVouchers[_meter];
         
