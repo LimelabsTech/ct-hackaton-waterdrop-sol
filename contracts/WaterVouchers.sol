@@ -70,6 +70,11 @@ contract WaterVouchers is Ownable {
         return true;
     }
 
+    function estimatePrice(address _meter, uint _liters) public view returns(uint256 price) {    
+        PriceEstimator priceEstimatorContract = PriceEstimator(priceEstimatorContractAddress);
+        return priceEstimatorContract.estimate(_meter, _liters);
+    }
+
     function getLastVoucherLitersInMonth(address _meter, uint256 _timestampEnd) public constant returns(uint256 liters) {
         uint256 resultLiters;
         bytes32[] storage voucherIdsLoc = meterVouchers[_meter];
@@ -127,8 +132,7 @@ contract WaterVouchers is Ownable {
         require(_meter != address(0));
         require(_liters > 0);
 
-        PriceEstimator priceEstimatorContract = PriceEstimator(priceEstimatorContractAddress);
-        uint256 currentPrice = priceEstimatorContract.estimate(_meter, _liters);
+        uint256 currentPrice = this.estimatePrice(_meter, _liters);
 
         vouchers[_voucherId] = Voucher({
             issuer: msg.sender,
