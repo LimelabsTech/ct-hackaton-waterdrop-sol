@@ -27,7 +27,7 @@ contract PriceEstimator is IPriceEstimator, OwnableUpgradeableImplementation {
 
     function estimate(address _meter, uint _liters) public view returns(uint256 amount, uint256 price) {        
         require(_meter != address(0));
-        require(_liters > 3000);
+        require(_liters >= 3000);
         require(_liters % 1000 == 0);
 
         uint256 householdSize = householdMetersContract.getHouseholdMembersCount(_meter);
